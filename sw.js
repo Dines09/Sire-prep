@@ -1,5 +1,5 @@
 /* SIRE Prep offline cache. Change VERSION whenever index.html is updated so phones pick up the new copy. */
-const VERSION = 'sire-prep-v3';
+const VERSION = 'sire-prep-v4';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

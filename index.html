@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>SIRE 2.0 Prep - Seaways Mirage</title>
+<title>SIRE 2.0 Prep - Anglo Eastern</title>
 <style>
 :root{padding-top:env(safe-area-inset-top,0px)}
 :root{
@@ -415,7 +415,7 @@ button.bst:active{transform:scale(.98)}
 </head>
 <body>
 <header class="appbar">
-  <div class="brand"><b>SIRE 2.0 Prep</b><span id="brandsub">Seaways Mirage</span></div>
+  <div class="brand"><b>SIRE 2.0 Prep</b><span id="brandsub">Anglo Eastern</span></div>
   <div class="lang" id="langbox" role="group" aria-label="Language"></div>
   <button class="icon-btn" id="themebtn" data-act="theme" aria-label="Switch light or dark mode"></button>
   <button class="icon-btn" id="infobtn" data-act="info" aria-label="How to use this toolkit"></button>
@@ -433,6 +433,7 @@ button.bst:active{transform:scale(.98)}
 var D=JSON.parse(document.getElementById('sire-data').textContent);
 var Q=D.q, G=D.g, VT=D.vt, INSP=D.insp, MAJ=D.maj;
 var QMAP=new Map(); Q.forEach(function(q){QMAP.set(q.n,q);});
+var CO='Anglo Eastern';
 var HI={o:{},q:{}};try{var he=document.getElementById('sire-hi');if(he)HI=JSON.parse(he.textContent);}catch(e){}
 function hiO(o){return S.lang==='hi'?(HI.o[o.i]||''):'';}
 function hiQ(n){return S.lang==='hi'?(HI.q[n]||''):'';}
@@ -739,7 +740,7 @@ function pageHome(){
  var r=rankById(S.rank)||RANKS[0], uv=userVt();
  var all=counts(Q), iq=ivFor(r), core=Q.filter(function(q){return q.ty==='Core';}), rot=Q.filter(function(q){return q.ty!=='Core';});
  var nx=nextUp();
- var h='<section class="hero"><div class="hero-row"><div class="hero-txt"><p class="hero-vessel">'+esc(D.vessel)+' · SIRE 2.0</p><h1>'+T('Your preparation','आपकी तैयारी')+'</h1>'+
+ var h='<section class="hero"><div class="hero-row"><div class="hero-txt"><p class="hero-vessel">'+esc(CO)+' · SIRE 2.0</p><h1>'+T('Your preparation','आपकी तैयारी')+'</h1>'+
   '<div class="hchips"><button class="hchip" data-act="openRank">'+IC.user+'<span>'+esc(r.label)+'</span><span class="ed">▾</span></button><button class="hchip" data-act="openVt">'+IC.ship+'<span>'+esc(vtName(S.vt))+'</span><span class="ed">▾</span></button></div></div>'+
   ring(pct(all.r,all.t),all.r+'/'+all.t,T('ready','तैयार'))+'</div>'+
   '<div class="hero-btns">'+(nx?'<a class="btn pri" href="#/q/'+nx.n+'">'+T('Continue','जारी रखें')+' → Q '+nx.n+'</a>':'<span class="btn pri">'+T('All done!','सब पूरा!')+'</span>')+'<a class="btn sec2" href="#/mock">'+T('Mock test','Mock test')+'</a></div></section>';
@@ -1176,7 +1177,7 @@ function openOnb(){
 function drawOnb(){
  var el=$('#onb');if(!el)return;var y0=el.scrollTop,same=(OB._last===OB.step);OB._last=OB.step;var s=OB.step,h='<div class="in"><div class="dots">'+[1,2].map(function(i){return '<i class="'+(i<=s?'on':'')+'"></i>';}).join('')+'</div>';
  if(s===1){
-  h+='<p class="s" style="margin-bottom:6px;font-weight:700;color:#fff">'+esc(D.vessel)+' \u00B7 SIRE 2.0 Prep</p><h2>'+T('What is your rank?','आपकी rank क्या है?')+'</h2><p class="s">'+T('We will show your interview questions first.','हम आपके interview questions पहले दिखाएँगे।')+'</p>'+
+  h+='<p class="s" style="margin-bottom:6px;font-weight:700;color:#fff">'+esc(CO)+' \u00B7 SIRE 2.0 Prep</p><h2>'+T('What is your rank?','आपकी rank क्या है?')+'</h2><p class="s">'+T('We will show your interview questions first.','हम आपके interview questions पहले दिखाएँगे।')+'</p>'+
    RANKS.map(function(r){var n=ivFor(r).length;return '<button class="opt'+(OB.rank===r.id?' on':'')+'" data-act="onbRank" data-v="'+r.id+'"><div><b>'+esc(r.label)+'</b><span>'+esc(T(r.sub[0],r.sub[1]))+'</span></div>'+(n?'<span class="rn">'+n+'</span>':'')+'</button>';}).join('');
  }else{
   h+='<h2>'+T('What type is your vessel?','आपका vessel किस type का है?')+'</h2><p class="s">'+T('Past observations for your type will be shown first; others stay folded.','आपके type के पुराने observations पहले दिखेंगे; बाकी बंद (folded) रहेंगे।')+'</p>'+
@@ -1216,7 +1217,7 @@ function renderBar(){
  $('#themebtn').innerHTML=dark?IC.sun:IC.moon;
  $('#infobtn').innerHTML=IC.info;
  $('#langbox').innerHTML='<button class="'+(S.lang==='en'?'on':'')+'" data-act="lang" data-v="en" aria-label="English">EN</button><button class="'+(S.lang==='hi'?'on':'')+'" data-act="lang" data-v="hi" aria-label="Hindi and English">हि</button>';
- var r=rankById(S.rank);$('#brandsub').textContent=D.vessel+(r?' · '+r.label:'');
+ var r=rankById(S.rank);$('#brandsub').textContent=CO+(r?' · '+r.label:'');
  document.documentElement.lang=S.lang==='hi'?'hi':'en';
 }
 function centerChips(){
