@@ -395,6 +395,22 @@ button.bst:active{transform:scale(.98)}
 .obs-t.hit{border-left-color:var(--teal);font-size:.97rem}
 .qhi{font-size:.98rem;line-height:1.6;margin:-4px 0 12px;padding:8px 10px;border-radius:10px;background:var(--soft);border-left:3px solid var(--teal)}
 .mcard .qhi{margin:6px 0 4px}
+
+.sh-head .ver{font-style:normal;font-size:.74rem;font-weight:700;color:var(--muted);white-space:nowrap;margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.locl{display:grid;gap:8px}
+.lrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px 14px;min-height:48px}
+.lrow b{font-weight:650}
+.lrow .ck{width:22px;height:22px;flex:none;border-radius:7px;border:2px solid var(--muted);display:inline-block;position:relative}
+.lrow.on{border-color:var(--yellow)}
+.lrow.on .ck{background:var(--navy2);border-color:var(--navy2)}
+.lrow.on .ck::after{content:"";position:absolute;left:6px;top:2px;width:5px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.instbar{position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top));z-index:120;max-width:600px;margin:0 auto;display:flex;align-items:center;gap:10px;background:#0B2545;color:#fff;border-radius:16px;padding:10px 10px 10px 14px;box-shadow:0 8px 28px rgba(0,0,0,.35);animation:fade .25s ease}
+.instbar .ib-t{flex:1;min-width:0}
+.instbar .ib-t b{display:block;font-size:.95rem}
+.instbar .ib-t span{display:block;font-size:.78rem;color:#CFE0F3;line-height:1.3}
+.instbar .ib-b{flex:none;padding:8px 16px;min-height:40px}
+.instbar .ib-x{flex:none;width:34px;height:34px;border-radius:50%;color:#fff;background:rgba(255,255,255,.14);display:grid;place-items:center}
+.instbar .ib-x svg{width:16px;height:16px}
 </style>
 </head>
 <body>
@@ -440,7 +456,7 @@ var store={get:function(k,d){try{var v=localStorage.getItem('sire.'+k);return v=
 var S={
  rank:store.get('rank',null), vt:store.get('vt',null), lang:store.get('lang','en'), theme:store.get('theme',null),
  status:store.get('status',{}), notes:store.get('notes',{}), mockHist:store.get('mockHist',[]), onb:store.get('onb',false),
- qf:{ch:'all',ty:'all',iv:null,st:null,loc:'all',text:''},
+ qf:{ch:'all',ty:'all',iv:null,st:null,loc:[],text:''},
  qtab:'guid', qo:{m:'all',text:'',for:''}, gopen:{},
  ov:null, obTab:'insp', oi:{text:'',major:'all'},
  lim:{}, mock:store.get('mock',null), sq:''
@@ -775,7 +791,7 @@ function filterQ(){
   if(f.ty==='Interview'){if(!q.iv.length)return false;}else if(f.ty==='rot'){if(q.ty==='Core')return false;}else if(f.ty!=='all'&&q.ty!==f.ty)return false;
   if(rk){if(!(rk.all?q.iv.length:q.iv.some(function(x){return rk.iv.indexOf(x)>-1;})))return false;}
   if(f.st){var s=S.status[q.n];if(f.st==='unmarked'){if(s)return false;}else if(s!==f.st)return false;}
-  if(f.loc!=='all'&&q.loc.indexOf(f.loc)<0)return false;
+  if(f.loc.length&&!f.loc.some(function(l){return q.loc.indexOf(l)>-1;}))return false;
   if(t&&q.hay.indexOf(t)<0)return false;
   return true;
  });
@@ -789,7 +805,7 @@ function qChips(){
  h+='<p class="lbl-row">Chapter</p><div class="chips"><button class="chip'+(f.ch==='all'?' on':'')+'" data-act="qf" data-k="ch" data-v="all">'+T('All','सभी')+'</button>'+CHS.map(function(c){return '<button class="chip'+(String(f.ch)===String(c)?' on':'')+'" data-act="qf" data-k="ch" data-v="'+c+'">'+c+' · '+esc(chName(c))+'</button>';}).join('')+'</div>';
  var act='';
  if(f.iv){var rk=rankById(f.iv);act+='<button class="pillx" data-act="qf" data-k="iv" data-v="">Interview: '+esc(rk?rk.label:f.iv)+' '+IC.x+'</button>';}
- if(f.loc!=='all'){act+='<button class="pillx" data-act="qf" data-k="loc" data-v="all">'+T('Where: ','कहाँ: ')+esc(f.loc)+' '+IC.x+'</button>';}
+ if(f.loc.length){act+='<button class="pillx" data-act="qlocclear">'+T('Where: ','कहाँ: ')+esc(f.loc.join(', '))+' '+IC.x+'</button>';}
  if(act)h+='<div style="margin-top:4px">'+act+'</div>';
  return h;
 }
@@ -803,18 +819,31 @@ function qListHtml(){
  });
  return out;
 }
+function locsAll(){return Array.from(new Set([].concat.apply([],Q.map(function(q){return q.loc;})))).sort();}
+function qlocBtn(){var l=S.qf.loc;return '<div><span>'+T('Where on this ship','इस ship पर कहाँ')+'</span><b>'+(l.length?esc(l.join(', ')):T('Any','कहीं भी (Any)'))+'</b></div><span class="go" style="margin-left:auto">'+IC.chev+'</span>';}
+function locSheet(){
+ openSheet({st:{},
+  title:function(){return [T('Where on this ship','इस ship पर कहाँ'),T('Pick one or more places','एक या ज़्यादा जगह चुनें')];},
+  render:function(){
+   var l=S.qf.loc,all=locsAll();
+   return '<div class="locl"><button class="lrow'+(l.length?'':' on')+'" data-act="locany"><i class="ck"></i><b>'+T('Any','Any (कहीं भी)')+'</b></button>'+
+    all.map(function(x){var on=l.indexOf(x)>-1;return '<button class="lrow'+(on?' on':'')+'" data-act="loctog" data-v="'+esc(x)+'"><i class="ck"></i><b>'+esc(x)+'</b></button>';}).join('')+'</div>'+
+    '<button class="btn solid block" style="margin-top:14px" data-act="shclose">'+T('Done','हो गया')+(l.length?' ('+l.length+')':'')+'</button>';
+  }});
+}
 function pageQuestions(){
  var locs=Array.from(new Set([].concat.apply([],Q.map(function(q){return q.loc;})))).sort();
  return '<h1 class="page-title">'+T('Questions','Questions')+'</h1>'+
   hint('',T('All '+Q.length+' questions that may be asked. Colour shows the type: <b style="color:var(--red)">Core</b> (most likely), <b style="color:var(--blue)">Rotational</b>, <b style="color:#B88700">Interview</b>. Tap a question for guidance, past observations and your notes.','सभी '+Q.length+' questions जो पूछे जा सकते हैं। रंग से type पता चलता है: <b style="color:var(--red)">Core</b> (सबसे ज़्यादा संभावना), <b style="color:var(--blue)">Rotational</b>, <b style="color:#B88700">Interview</b>। Guidance, पुराने observations और notes के लिए question पर tap करें।'))+
   '<div class="search">'+IC.search+'<input id="qsearch" type="search" placeholder="'+T('Search number or word, e.g. 5.8 or lifeboat','Number या शब्द खोजें, जैसे 5.8 या lifeboat')+'" value="'+esc(S.qf.text)+'" autocomplete="off"></div>'+
   '<div id="qchips">'+qChips()+'</div>'+
-  '<div style="margin:6px 0 10px"><select id="qloc" aria-label="Where on the ship"><option value="all">'+T('Where on the ship: anywhere','Ship पर कहाँ: कहीं भी')+'</option>'+locs.map(function(l){return '<option'+(S.qf.loc===l?' selected':'')+'>'+esc(l)+'</option>';}).join('')+'</select></div>'+
+  '<div style="margin:6px 0 10px"><button class="rk" id="qlocbtn" data-act="qlocopen" style="margin-top:0">'+qlocBtn()+'</button></div>'+
   '<p class="small muted" id="qcount"></p><div id="qlist"></div>';
 }
 function refreshQuestions(){
  var c=$('#qchips');if(c){var old=[];var rs=c.querySelectorAll('.chips');for(var i=0;i<rs.length;i++)old.push(rs[i].scrollLeft);c.innerHTML=qChips();rs=c.querySelectorAll('.chips');for(var j=0;j<rs.length;j++)rs[j].scrollLeft=old[j]||0;}
  var l=$('#qlist');if(l)l.innerHTML=qListHtml();
+ var lb=$('#qlocbtn');if(lb)lb.innerHTML=qlocBtn();
  var n=$('#qcount');if(n){var fl=filterQ(),k=counts(fl);n.textContent=fl.length+' '+T('of','में से')+' '+Q.length+' questions · '+k.r+' '+T('ready','ready');}
 }
 
@@ -1009,7 +1038,7 @@ function hpush(st){if(!HIST_OK)return;try{history.pushState(st,'');}catch(e){HIS
 function hrep(st){if(!HIST_OK)return;try{history.replaceState(st,'');}catch(e){HIST_OK=false;}}
 function sheetHead(o){
  var t=o.title(o.st);
- return '<div class="sh-head"><button class="nbtn" data-act="shclose" aria-label="Close">'+(SH.indexOf(o)>0?IC.back:IC.close)+'</button><div class="t"><b>'+t[0]+'</b>'+(t[1]?'<span>'+t[1]+'</span>':'')+'</div></div>';
+ return '<div class="sh-head"><button class="nbtn" data-act="shclose" aria-label="Close">'+(SH.indexOf(o)>0?IC.back:IC.close)+'</button><div class="t"><b>'+t[0]+'</b>'+(t[1]?'<span>'+t[1]+'</span>':'')+'</div>'+(t[2]?'<em class="ver">'+t[2]+'</em>':'')+'</div>';
 }
 function drawSheet(o,keep){var el=o.bg.firstChild;var y=el.scrollTop;el.innerHTML=sheetHead(o)+o.render(o.st);if(keep)el.scrollTop=y;else el.scrollTop=0;}
 function openSheet(o){
@@ -1101,7 +1130,7 @@ function majorSheet(m,v){
 }
 function infoSheet(){
  openSheet({st:{},
-  title:function(){return [T('How to use this toolkit','Toolkit कैसे use करें'),esc(D.vessel)+' · SIRE 2.0'];},
+  title:function(){return [T('How to use this toolkit','Toolkit कैसे use करें'),'Anglo Eastern · SIRE 2.0','App version '+APP_VER];},
   render:function(){
    var r=rankById(S.rank);
    var h=installBox()+'<section class="card"><h3 style="margin-bottom:10px">'+T('Quick guide','आसान guide')+'</h3><ol class="howto">'+
@@ -1138,13 +1167,14 @@ function vtSheet(){
 }
 
 /* ====== ONBOARDING ====== */
+var APP_VER='1.0';
 var OB=null;
 function openOnb(){
  OB={step:1,rank:S.rank,vt:S.vt};
  var el=document.createElement('div');el.className='onb';el.id='onb';document.body.appendChild(el);document.body.classList.add('noscroll');drawOnb();
 }
 function drawOnb(){
- var el=$('#onb');if(!el)return;var s=OB.step,h='<div class="in"><div class="dots">'+[1,2].map(function(i){return '<i class="'+(i<=s?'on':'')+'"></i>';}).join('')+'</div>';
+ var el=$('#onb');if(!el)return;var y0=el.scrollTop,same=(OB._last===OB.step);OB._last=OB.step;var s=OB.step,h='<div class="in"><div class="dots">'+[1,2].map(function(i){return '<i class="'+(i<=s?'on':'')+'"></i>';}).join('')+'</div>';
  if(s===1){
   h+='<p class="s" style="margin-bottom:6px;font-weight:700;color:#fff">'+esc(D.vessel)+' \u00B7 SIRE 2.0 Prep</p><h2>'+T('What is your rank?','आपकी rank क्या है?')+'</h2><p class="s">'+T('We will show your interview questions first.','हम आपके interview questions पहले दिखाएँगे।')+'</p>'+
    RANKS.map(function(r){var n=ivFor(r).length;return '<button class="opt'+(OB.rank===r.id?' on':'')+'" data-act="onbRank" data-v="'+r.id+'"><div><b>'+esc(r.label)+'</b><span>'+esc(T(r.sub[0],r.sub[1]))+'</span></div>'+(n?'<span class="rn">'+n+'</span>':'')+'</button>';}).join('');
@@ -1153,14 +1183,14 @@ function drawOnb(){
    VT.map(function(v,i){return '<button class="opt'+(String(OB.vt)===String(i)?' on':'')+'" data-act="onbVt" data-v="'+i+'"><div><b>'+esc(v)+'</b></div></button>';}).join('')+
    '<button class="opt'+(OB.vt==='all'?' on':'')+'" data-act="onbVt" data-v="all"><div><b>'+T('Not sure / show all types','पता नहीं / सभी types दिखाएँ')+'</b></div></button>';
  }
- var canNext=(s===1&&OB.rank)||(s===2&&OB.vt!==null);
- h+='<div class="nav">'+(s>1?'<button class="btn sec2" data-act="onbBack">'+T('Back','पीछे')+'</button>':'')+'<button class="btn pri" data-act="onbNext"'+(canNext?'':' disabled style="opacity:.5"')+'>'+(s===2?T('Start preparing','तैयारी शुरू करें'):T('Next','आगे'))+'</button></div></div>';
- el.innerHTML=h;el.scrollTop=0;
+ if(s===1)h+='<p class="s" style="margin-top:12px;font-size:.85rem">'+T('Tap your rank to continue.','आगे बढ़ने के लिए अपनी rank पर tap करें।')+'</p></div>';
+ else h+='<div class="nav">'+'<button class="btn sec2" data-act="onbBack">'+T('Back','पीछे')+'</button>'+(OB.vt!==null?'<button class="btn pri" data-act="onbNext">'+T('Start preparing','तैयारी शुरू करें')+'</button>':'')+'</div></div>';
+ el.innerHTML=h;el.scrollTop=same?y0:0;
 }
 function finishOnb(){
  S.rank=OB.rank;S.vt=OB.vt;S.onb=true;store.set('rank',S.rank);store.set('vt',S.vt);store.set('onb',true);
  S.ov=userVt()===null?'all':String(userVt());
- var el=$('#onb');if(el)el.parentNode.removeChild(el);document.body.classList.remove('noscroll');OB=null;rerender();
+ var el=$('#onb');if(el)el.parentNode.removeChild(el);document.body.classList.remove('noscroll');OB=null;rerender();setTimeout(showInstBar,700);
 }
 
 /* ====== ROUTER ====== */
@@ -1211,7 +1241,7 @@ function render(){
 }
 function applyQfFromLink(a){
  var v=a.getAttribute('data-qf');if(!v)return;
- var kv=v.split(':');S.qf={ch:'all',ty:'all',iv:null,st:null,loc:'all',text:''};
+ var kv=v.split(':');S.qf={ch:'all',ty:'all',iv:null,st:null,loc:[],text:''};
  if(kv[0]==='ch')S.qf.ch=kv[1];else if(kv[0]==='ty')S.qf.ty=kv[1];else if(kv[0]==='iv')S.qf.iv=kv[1];else if(kv[0]==='st')S.qf.st=kv[1];
 }
 function validRoute(r){return typeof r==='string'&&/^#\/(home|questions|obs|mock|search|notes|q\/[0-9.]+)/.test(r);}
@@ -1285,7 +1315,11 @@ document.addEventListener('click',function(e){
   case 'chap':chapSheet(b.getAttribute('data-c'));break;
   case 'major':majorSheet(b.getAttribute('data-m'));break;
   case 'qf':var k=b.getAttribute('data-k');S.qf[k]=(v===''?(k==='iv'||k==='st'?null:'all'):v);refreshQuestions();break;
-  case 'qclear':S.qf={ch:'all',ty:'all',iv:null,st:null,loc:'all',text:''};var si=$('#qsearch');if(si)si.value='';var sl=$('#qloc');if(sl)sl.value='all';refreshQuestions();break;
+  case 'qlocopen':locSheet();break;
+  case 'locany':S.qf.loc=[];refreshQuestions();redrawSheets();break;
+  case 'loctog':var li=S.qf.loc.indexOf(v);if(li>-1)S.qf.loc.splice(li,1);else S.qf.loc.push(v);refreshQuestions();redrawSheets();break;
+  case 'qlocclear':S.qf.loc=[];refreshQuestions();break;
+  case 'qclear':S.qf={ch:'all',ty:'all',iv:null,st:null,loc:[],text:''};var si=$('#qsearch');if(si)si.value='';refreshQuestions();break;
   case 'mark':var n=b.getAttribute('data-n');if(S.status[n]===v)delete S.status[n];else S.status[n]=v;store.set('status',S.status);rerender();if(S.status[n])toast(v==='ready'?T('Marked ready ✓','Ready mark हो गया ✓'):T('Marked for revision','Revise के लिए mark हो गया'));break;
   case 'qtab':S.qtab=v;CUR=CUR.replace(/\?.*$/,'')+'?tab='+v;hrep(hstate());store.set('route',CUR);rerender();var sg=$('#qseg');if(sg&&sg.getBoundingClientRect().top<70)window.scrollTo(0,Math.max(0,sg.offsetTop-70));break;
   case 'more':var mk=b.getAttribute('data-key');S.lim[mk]=lim(mk)+20;if(ts&&b.closest('.sheet-bg'))drawSheet(ts,true);else rerender();break;
@@ -1306,14 +1340,15 @@ document.addEventListener('click',function(e){
   case 'resetAll':if(b.getAttribute('data-arm')!=='1'){b.setAttribute('data-arm','1');b.textContent=T('Tap again to clear everything','सब मिटाने के लिए फिर से tap करें');b.style.background='var(--red)';b.style.color='#fff';setTimeout(function(){if(b.isConnected){b.removeAttribute('data-arm');redrawSheets();}},4000);break;}
    S.status={};S.notes={};S.mockHist=[];S.mock=null;store.set('status',{});store.set('notes',{});store.set('mockHist',[]);saveMock();toast(T('Cleared','मिटा दिया'));rerender();redrawSheets();break;
   case 'obgo':S.obTab=v;var ob2=$('#obbody');if(ob2){ob2.innerHTML=obBody(obsFiltered(S.ov));var sg2=document.querySelectorAll('#obseg button');for(var k2=0;k2<sg2.length;k2++)sg2[k2].className=sg2[k2].getAttribute('data-v')===v?'on':'';var seg=$('#obseg');if(seg)window.scrollTo(0,Math.max(0,seg.getBoundingClientRect().top+window.scrollY-80));}break;
-  case 'install':if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(function(){deferredPrompt=null;redrawSheets();}).catch(function(){});}break;
+  case 'install':if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(function(){deferredPrompt=null;hideInstBar();redrawSheets();}).catch(function(){});}break;
+  case 'instclose':hideInstBar();break;
   case 'bkMake':var code=makeBackup();var ta=$('#bkout');if(ta){ta.value=code;ta.hidden=false;ta.select();}copyText(code);break;
   case 'bkRestore':var inp=$('#bkin');if(inp)restoreBackup(inp.value);break;
   case 'onbLang':S.lang=v;store.set('lang',v);renderBar();drawOnb();break;
-  case 'onbRank':OB.rank=v;drawOnb();break;
-  case 'onbVt':OB.vt=v;drawOnb();break;
+  case 'onbRank':OB.rank=v;drawOnb();setTimeout(function(){if(OB&&OB.step===1&&OB.rank===v){OB.step=2;drawOnb();}},220);break;
+  case 'onbVt':OB.vt=v;drawOnb();var oe=$('#onb');if(oe)setTimeout(function(){oe.scrollTo({top:oe.scrollHeight,behavior:'smooth'});},60);break;
   case 'onbBack':OB.step--;drawOnb();break;
-  case 'onbNext':if(OB.step===1&&!OB.rank)break;if(OB.step===2){if(OB.vt===null)break;finishOnb();}else{OB.step++;drawOnb();}break;
+  case 'onbNext':if(OB.step===2&&OB.vt!==null)finishOnb();break;
  }
 });
 document.addEventListener('toggle',function(e){
@@ -1336,8 +1371,7 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
  var t=e.target,id=t.id;
- if(id==='qloc'){S.qf.loc=t.value;refreshQuestions();}
- else if(id==='qomaj'){S.qo.m=t.value;refreshQObs();}
+ if(id==='qomaj'){S.qo.m=t.value;refreshQObs();}
  else if(id==='imajor'){S.oi.major=t.value;refreshInsp();}
 });
 
@@ -1358,18 +1392,36 @@ function toggleTheme(){
 
 /* ====== INSTALL (PWA, only when served as a website with manifest) ====== */
 var deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;redrawSheets();});
-window.addEventListener('appinstalled',function(){deferredPrompt=null;toast(T('App installed ✓','App install हो गया ✓'));redrawSheets();});
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;redrawSheets();drawInstBar();});
+window.addEventListener('appinstalled',function(){deferredPrompt=null;hideInstBar();toast(T('App installed ✓','App install हो गया ✓'));redrawSheets();});
 function isStandalone(){try{return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}catch(e){return false;}}
 function hasManifest(){return !!document.querySelector('link[rel=manifest]');}
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+function installSteps(){
+ return '<div class="small" style="display:grid;gap:8px"><div><b>Android (Chrome)</b><ol style="margin:4px 0 0;padding-left:18px"><li>'+T('Tap the menu ⋮ (top right).','ऊपर दाएँ menu ⋮ दबाएँ।')+'</li><li>'+T('Tap <b>Install app</b> (or <b>Add to Home screen</b>).','<b>Install app</b> (या <b>Add to Home screen</b>) दबाएँ।')+'</li><li>'+T('Tap <b>Install</b> to confirm. The app icon appears on your home screen.','<b>Install</b> दबाकर confirm करें। App का icon home screen पर आ जाएगा।')+'</li></ol></div>'+
+  '<div><b>iPhone (Safari)</b><ol style="margin:4px 0 0;padding-left:18px"><li>'+T('Open this link in <b>Safari</b> (not Chrome).','इस link को <b>Safari</b> में खोलें (Chrome में नहीं)।')+'</li><li>'+T('Tap the Share button ⬆ (bottom).','नीचे Share button ⬆ दबाएँ।')+'</li><li>'+T('Scroll and tap <b>Add to Home Screen</b>, then <b>Add</b>.','नीचे scroll करके <b>Add to Home Screen</b> दबाएँ, फिर <b>Add</b>।')+'</li></ol></div></div>';
+}
 function installBox(){
  if(!hasManifest())return '';
  if(isStandalone())return '<section class="card"><h3 style="margin-bottom:4px">✓ '+T('Installed app','Installed app')+'</h3><p class="small muted">'+T('This app is installed and works offline. Your marks and notes stay on this phone.','यह app install है और बिना internet के चलता है। आपके marks और notes इसी phone में रहते हैं।')+'</p></section>';
  var h='<section class="card"><h3 style="margin-bottom:6px">'+T('Install on your phone','Phone में install करें')+'</h3><p class="small muted" style="margin-bottom:10px">'+T('Install once and it opens like an app, even without internet.','एक बार install करें, फिर यह app की तरह खुलेगा, बिना internet के भी।')+'</p>';
- if(deferredPrompt)h+='<button class="btn pri block" data-act="install">'+T('Install app','App install करें')+'</button>';
- else h+='<ul class="small" style="margin:0;padding-left:18px"><li>'+T('Android (Chrome): menu ⋮ → <b>Install app</b> or <b>Add to Home screen</b>','Android (Chrome): menu ⋮ → <b>Install app</b> या <b>Add to Home screen</b>')+'</li><li>'+T('iPhone (Safari): Share ⬆ → <b>Add to Home Screen</b>','iPhone (Safari): Share ⬆ → <b>Add to Home Screen</b>')+'</li></ul>';
- return h+'</section>';
+ if(deferredPrompt)h+='<button class="btn pri block" style="margin-bottom:12px" data-act="install">'+T('Install app','App install करें')+'</button>';
+ return h+installSteps()+'</section>';
 }
+/* Install reminder: shown at the top on up to 7 openings, only in the browser (not once installed). */
+function drawInstBar(){
+ var el=$('#instbar');if(!el)return;
+ var ios=isIOS();
+ el.innerHTML='<div class="ib-t"><b>'+T('Install this app','इस app को install करें')+'</b><span>'+(deferredPrompt?T('Works offline, opens like an app.','बिना internet के चलेगा, app की तरह खुलेगा।'):ios?T('Tap Share ⬆ then “Add to Home Screen”.','Share ⬆ दबाकर “Add to Home Screen” चुनें।'):T('Works offline, opens like an app.','बिना internet के चलेगा, app की तरह खुलेगा।'))+'</span></div><button class="btn pri ib-b" data-act="'+(deferredPrompt?'install':'info')+'">'+(deferredPrompt?T('Install','Install'):T('How?','कैसे?'))+'</button><button class="ib-x" data-act="instclose" aria-label="Close">'+IC.close+'</button>';
+}
+var instShown=false;
+function showInstBar(){
+ if(instShown||!hasManifest()||isStandalone()||!S.onb)return;
+ var n=store.get('instN',0);if(n>=7)return;
+ instShown=true;store.set('instN',n+1);
+ var el=document.createElement('div');el.id='instbar';el.className='instbar';document.body.appendChild(el);drawInstBar();
+}
+function hideInstBar(){var el=$('#instbar');if(el&&el.parentNode)el.parentNode.removeChild(el);}
 function registerSW(){
  if(!hasManifest()||!('serviceWorker' in navigator))return;
  if(location.protocol!=='https:'&&location.hostname!=='localhost')return;
@@ -1390,7 +1442,7 @@ function init(){
  render();
  registerSW();
  if(!S.onb||!S.rank||S.vt===null)openOnb();
- else if(about)infoSheet();
+ else{if(about)infoSheet();setTimeout(showInstBar,1200);}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
