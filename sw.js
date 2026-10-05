@@ -1,5 +1,5 @@
 /* SIRE Prep offline cache. Change VERSION whenever index.html or sms/ is updated so phones pick up the new copy. */
-const VERSION = 'sire-prep-v9';
+const VERSION = 'sire-prep-v10';
 const PAGES = 'sire-sms-pages-v3'; // SMS manual page images, kept across app updates. Change it when the manuals are re-rendered.
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './sms/refs.js'];
 
@@ -8,8 +8,10 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
+  // Only our own old caches: dines09.github.io is shared with the other apps (Month End, PMS, ...)
+  // and CacheStorage is per origin, so deleting every other cache name wiped their offline copies too.
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== PAGES).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith('sire-') && k !== VERSION && k !== PAGES).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
